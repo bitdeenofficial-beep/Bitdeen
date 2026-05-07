@@ -1,11 +1,11 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { 
-  onAuthStateChanged, 
-  signInWithPopup, 
+import {
+  onAuthStateChanged,
+  signInWithPopup,
   signOut as firebaseSignOut,
-  type User 
+  type User
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from './firebase'
@@ -53,95 +53,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const fetchUserProfile = async (firebaseUser: User) => {
-    const userRef = doc(db, 'users', firebaseUser.uid)
-    const userSnap = await getDoc(userRef)
+    try {
+      const userRef = doc(db, 'users', firebaseUser.uid)
+      const userSnap = await getDoc(userRef)
 
-    if (userSnap.exists()) {
-      const data = userSnap.data() as UserProfile
-      setUserProfile(data)
-      // Update last login
-      await updateDoc(userRef, { lastLoginAt: serverTimestamp() })
-    } else {
-      // Create new user profile
-      const newProfile: UserProfile = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        displayName: firebaseUser.displayName || '',
-        photoURL: firebaseUser.photoURL || '',
-        profileCompleted: false,
-        activationCompleted: false,
-        createdAt: new Date(),
-        lastLoginAt: new Date(),
-        totalTickets: 0,
-        referralCode: generateReferralCode(firebaseUser.uid),
-        completedTasks: 0,
-        dailyCheckIns: 0,
+      if (userSnap.exists()) {
+        setUserProfile(userSnap.data() as UserProfile)
+
+        await updateDoc(userRef, {
+          lastLoginAt: serverTimestamp()
+        })
+      } else {
+        const newProfile: UserProfile = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          displayName: firebaseUser.displayName || '',
+          photoURL: firebaseUser.photoURL || '',
+          profileCompleted: false,
+          activationCompleted: false,
+          createdAt: new Date(),
+          lastLoginAt: new Date(),
+          totalTickets: 0,
+          referralCode: generateReferralCode(firebaseUser.uid),
+          completedTasks: 0,
+          dailyCheckIns: 0,
+        }
+
+        await setDoc(userRef, {
+          ...newProfile,
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+        })
+
+        setUserProfile(newProfile)
       }
-      await setDoc(userRef, {
-        ...newProfile,
-        createdAt: serverTimestamp(),
-        lastLoginAt: serverTimestamp(),
-      })
-      setUserProfile(newProfile)
-    }
-  }
-
-  const refreshUserProfile = async () => {
-    if (user) {
-      await fetchUserProfile(user)
+    } catch (err) {
+      console.error(err)
     }
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser)
+      setLoading(false)
+
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser)
+        fetchUserProfile(firebaseUser)
       } else {
         setUserProfile(null)
       }
-      setLoading(false)
     })
 
     return () => unsubscribe()
   }, [])
 
   const signInWithGoogle = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider)
-    } catch (error) {
-      console.error('Error signing in with Google:', error)
-      throw error
-    }
+    await signInWithPopup(auth, googleProvider)
   }
 
   const signOut = async () => {
-    try {
-      await firebaseSignOut(auth)
-      setUserProfile(null)
-    } catch (error) {
-      console.error('Error signing out:', error)
-      throw error
-    }
+    await firebaseSignOut(auth)
+    setUserProfile(null)
   }
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) return
-    
+
     const userRef = doc(db, 'users', user.uid)
     await updateDoc(userRef, data)
-    setUserProfile(prev => prev ? { ...prev, ...data } : null)
+
+    setUserProfile(prev => (prev ? { ...prev, ...data } : null))
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userProfile, 
-      loading, 
-      signInWithGoogle, 
-      signOut, 
+    <AuthContext.Provider value={{
+      user,
+      userProfile,
+      loading,
+      signInWithGoogle,
+      signOut,
       updateUserProfile,
-      refreshUserProfile 
+      refreshUserProfile: async () => {}
     }}>
       {children}
     </AuthContext.Provider>
@@ -150,8 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }
