@@ -9,89 +9,99 @@ import { createTicket } from '@/lib/ticket-service'
 import { Button } from '@/components/ui/button'
 import { ThreeBackgroundSimple } from '@/components/three-background'
 import { toast } from 'sonner'
-import { Loader2, Ticket } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 const STORAGE_KEY = 'bitdeen_activation_tasks'
 
-const activationTasks = [
-  {
-    id: 'youtube',
-    title: 'YouTube Subscribe',
-    link: 'https://www.youtube.com/@Bitdeenofficial',
-  },
-  {
-    id: 'facebook',
-    title: 'Facebook Follow',
-    link: 'https://www.facebook.com/bitdeenofficial1',
-  },
-  {
-    id: 'telegram',
-    title: 'Join Community',
-    link: 'https://t.me/bitdeencommunity',
-  },
-  {
-    id: 'twitter',
-    title: 'Follow Twitter',
-    link: 'https://x.com/Bitdeenofficial',
-  },
-  {
-    id: 'instagram',
-    title: 'Follow Instagram',
-    link: 'https://www.instagram.com/bitdeenofficial',
-  },
-  {
-    id: 'tiktok',
-    title: 'Follow TikTok',
-    link: 'https://www.tiktok.com/@bitdeenofficial',
-  },
+const tasks = [
+  { id: 'youtube', title: 'YouTube Subscribe', link: 'https://youtube.com/@Bitdeenofficial' },
+  { id: 'facebook', title: 'Facebook Follow', link: 'https://facebook.com/bitdeenofficial1' },
+  { id: 'telegram', title: 'Telegram Community', link: 'https://t.me/bitdeencommunity' },
+  { id: 'twitter', title: 'Twitter Follow', link: 'https://x.com/Bitdeenofficial' },
+  { id: 'instagram', title: 'Instagram Follow', link: 'https://instagram.com/bitdeenofficial' },
+  { id: 'tiktok', title: 'TikTok Follow', link: 'https://www.tiktok.com/@bitdeenofficial' },
 ]
 
 export default function ActivationPage() {
   const router = useRouter()
   const { user, userProfile, updateUserProfile, refreshUserProfile, loading } = useAuth()
 
-  const [completed, setCompleted] = useState<string[]>([])
+  const [done, setDone] = useState<string[]>([])
+  const [taskStart, setTaskStart] = useState<Record<string, number>>({})
   const [claiming, setClaiming] = useState(false)
 
-  // 🔥 Load saved progress (NO RESET AFTER LOGOUT)
+  // ===============================
+  // LOAD DATA (NO RESET ON RELOAD)
+  // ===============================
   useEffect(() => {
     if (!loading && !user) router.push('/login')
-    if (!loading && user && !userProfile?.profileCompleted) router.push('/complete-profile')
 
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) setCompleted(JSON.parse(saved))
-  }, [user, userProfile, loading])
+    if (saved) setDone(JSON.parse(saved))
 
-  const openTask = (task: any) => {
-    if (completed.includes(task.id)) return
+  }, [user, loading])
 
-    // try open in app
+  // ===============================
+  // OPEN TASK (REAL TRACKING)
+  // ===============================
+  const openTask = (task) => {
+    if (done.includes(task.id)) return
+
     window.open(task.link, '_blank', 'noopener,noreferrer')
+
+    setTaskStart((prev) => ({
+      ...prev,
+      [task.id]: Date.now(),
+    }))
   }
 
+  // ===============================
+  // VERIFY TASK (ANTI FAKE SYSTEM)
+  // ===============================
   const verifyTask = (id: string) => {
-    setCompleted((prev) => {
-      if (prev.includes(id)) return prev
+    if (done.includes(id)) return
 
-      const updated = [...prev, id]
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    const start = taskStart[id]
 
-      toast.success('Task Verified!')
-      return updated
-    })
+    if (!start) {
+      toast.error('Please open the task first')
+      return
+    }
+
+    const diff = Date.now() - start
+
+    // minimum 10 sec required
+    if (diff < 10000) {
+      toast.error('Please stay at least 10 seconds')
+      return
+    }
+
+    const updated = [...done, id]
+
+    setDone(updated)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
+    toast.success('Task Verified ✔')
   }
 
-  const allDone = completed.length === activationTasks.length
+  const allDone = done.length === tasks.length
 
+  // ===============================
+  // CLAIM REWARD
+  // ===============================
   const claimReward = async () => {
-    if (!allDone || !userProfile) return
+    if (!allDone) return
+    if (!user || !userProfile?.uid) {
+      toast.error('User not loaded')
+      return
+    }
 
     setClaiming(true)
 
     try {
       await createTicket(
         userProfile.uid,
-        userProfile.fullName || userProfile.displayName,
+        userProfile.fullName || 'User',
         userProfile.phone || '',
         userProfile.address || '',
         'activation'
@@ -103,69 +113,93 @@ export default function ActivationPage() {
 
       await refreshUserProfile()
 
-      toast.success('Activation Completed! 🎉')
+      localStorage.removeItem(STORAGE_KEY)
+
+      toast.success('Activation Completed 🎉')
       router.push('/dashboard')
 
-    } catch {
-      toast.error('Error claiming reward')
+    } catch (err: any) {
+      toast.error(err?.message || 'Error claiming reward')
     } finally {
       setClaiming(false)
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin w-8 h-8" />
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center relative">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative islamic-pattern">
       <ThreeBackgroundSimple />
 
-      <div className="w-full max-w-lg bg-black/70 p-6 rounded-2xl border border-gray-700">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-lg"
+      >
+        <div className="bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 p-8">
 
-        {/* Header */}
-        <div className="text-center mb-6">
-          <Image
-            src="https://i.imgur.com/VZmr8Dr.jpeg"
-            alt="logo"
-            width={80}
-            height={80}
-            className="mx-auto rounded-full"
-          />
-          <h1 className="text-xl font-bold mt-3">Activate Account</h1>
-        </div>
+          {/* HEADER (UNCHANGED DESIGN) */}
+          <div className="flex flex-col items-center mb-8">
+            <Image
+              src="https://i.imgur.com/VZmr8Dr.jpeg"
+              alt="logo"
+              width={80}
+              height={80}
+              className="rounded-full mb-3"
+            />
 
-        {/* Tasks */}
-        <div className="space-y-3">
-          {activationTasks.map((t) => (
-            <div key={t.id} className="p-3 bg-gray-800 rounded-lg flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Account Activation</h1>
+            <p className="text-sm text-muted-foreground text-center mt-2">
+              Complete all tasks below to activate your account and earn your first lottery ticket!
+            </p>
+          </div>
 
-              <span>{t.title}</span>
+          {/* TASKS */}
+          <div className="space-y-3 mb-6">
+            {tasks.map((t) => (
+              <div
+                key={t.id}
+                className="p-3 bg-gray-800 rounded-lg flex justify-between items-center"
+              >
+                <span>{t.title}</span>
 
-              {completed.includes(t.id) ? (
-                <span className="text-green-400">✔ Done</span>
-              ) : (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => openTask(t)}>
-                    Open
-                  </Button>
-                  <Button size="sm" onClick={() => verifyTask(t.id)}>
-                    Verify
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {done.includes(t.id) ? (
+                  <span className="text-green-400">✔ Done</span>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => openTask(t)}>
+                      Open
+                    </Button>
+                    <Button size="sm" onClick={() => verifyTask(t.id)}>
+                      Verify
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
 
-        {/* Claim */}
-        <div className="mt-6">
+          {/* CLAIM */}
           <Button
             disabled={!allDone || claiming}
             onClick={claimReward}
             className="w-full"
           >
-            {claiming ? <Loader2 className="animate-spin" /> : 'Claim Ticket'}
+            {claiming ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              'Claim Reward'
+            )}
           </Button>
-        </div>
 
-      </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
