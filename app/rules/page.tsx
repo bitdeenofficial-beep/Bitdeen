@@ -2,171 +2,122 @@
 
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/navbar'
-import { Card, CardContent } from '@/components/ui/card'
-import {
-  BookOpen,
-  CheckCircle2,
-  AlertTriangle,
-  Ticket,
-  Users,
-  Calendar,
-  ListTodo,
-  Target,
-  Shield,
-} from 'lucide-react'
+import { ThreeBackgroundSimple } from '@/components/three-background'
+import { Card,CardContent } from '@/components/ui/card'
+import { BookOpen,CheckCircle2,AlertTriangle,Ticket } from 'lucide-react'
 
-export default function RulesPage() {
+export default function RulesPage(){
 
-  const generalRules = [
-    'Users must provide accurate information during registration',
-    'One account per user is strictly allowed',
-    'Users must complete profile verification before activation',
-    'Tickets are non-transferable and system controlled',
-    'Any misuse will result in permanent ban',
-  ]
+return(
 
-  const activationRules = [
-    {
-      icon: CheckCircle2,
-      title: 'Activation System',
-      description: 'Users must complete 6 fixed social tasks (Telegram, YouTube, Instagram, Facebook, TikTok, X) to unlock dashboard and earn 1 ticket.',
-    },
-    {
-      icon: Shield,
-      title: 'Fixed System',
-      description: 'Activation tasks are permanent and cannot be changed or modified for fairness.',
-    },
-  ]
+<div className="min-h-screen islamic-pattern">
 
-  const earningRules = [
-    {
-      icon: ListTodo,
-      title: 'Admin Tasks',
-      description: 'Earning tasks are provided dynamically by admin through Firebase system.',
-    },
-    {
-      icon: Calendar,
-      title: 'Daily Check-in',
-      description: 'Users can earn 1 ticket per day by checking in once daily.',
-    },
-    {
-      icon: Users,
-      title: 'Referral System',
-      description: 'Earn 10 tickets per verified referral after activation.',
-    },
-    {
-      icon: Target,
-      title: 'Mission Rewards',
-      description: '10 tasks = 1 ticket, 100 tasks = 10 tickets, 1000 tasks = 100 tickets.',
-    },
-  ]
+<ThreeBackgroundSimple/>
 
-  const drawRules = [
-    'All draws are conducted transparently at scheduled times',
-    'Only valid tickets are eligible for lottery draw',
-    'Winners are selected using random system',
-    'Live draws are streamed on YouTube and Facebook',
-    'Winners are announced publicly after draw',
-    'Prizes must be claimed within 30 days',
-  ]
+<Navbar/>
 
-  const prohibited = [
-    'Creating multiple accounts',
-    'Using bots or automation',
-    'Fake referral activity',
-    'System manipulation attempts',
-    'Sharing accounts with others',
-  ]
+<main className="pt-24 pb-16 px-4">
 
-  return (
-    <div className="min-h-screen bg-black text-white">
+<div className="max-w-4xl mx-auto">
 
-      <Navbar />
+<motion.div
+initial={{opacity:0}}
+animate={{opacity:1}}
+className="text-center mb-12"
+>
 
-      <div className="max-w-4xl mx-auto px-4 py-20">
+<h1 className="text-4xl font-bold">
 
-        {/* HEADER */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
-        >
-          <BookOpen className="mx-auto w-10 h-10 text-yellow-400 mb-3" />
-          <h1 className="text-3xl font-bold">
-            Rules & Guidelines
-          </h1>
-          <p className="text-gray-400 mt-2">
-            Please read carefully before using the platform
-          </p>
-        </motion.div>
+Rules & Guidelines
 
-        {/* GENERAL RULES */}
-        <Card className="mb-6 bg-gray-900 border-gray-700">
-          <CardContent className="p-5">
-            <h2 className="font-bold mb-3">General Rules</h2>
-            <ul className="space-y-2 text-gray-300">
-              {generalRules.map((r, i) => (
-                <li key={i}>• {r}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+</h1>
 
-        {/* ACTIVATION RULES */}
-        <Card className="mb-6 bg-gray-900 border-gray-700">
-          <CardContent className="p-5">
-            <h2 className="font-bold mb-3">Activation System</h2>
+</motion.div>
 
-            {activationRules.map((r, i) => (
-              <div key={i} className="mb-3">
-                <h3 className="font-semibold text-yellow-400">{r.title}</h3>
-                <p className="text-gray-400 text-sm">{r.description}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+<Card>
 
-        {/* EARNING RULES */}
-        <Card className="mb-6 bg-gray-900 border-gray-700">
-          <CardContent className="p-5">
-            <h2 className="font-bold mb-3">Earning System</h2>
+<CardContent className="p-8">
 
-            {earningRules.map((r, i) => (
-              <div key={i} className="mb-3">
-                <h3 className="font-semibold text-green-400">{r.title}</h3>
-                <p className="text-gray-400 text-sm">{r.description}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+<h2 className="text-xl font-bold mb-4">
 
-        {/* DRAW RULES */}
-        <Card className="mb-6 bg-gray-900 border-gray-700">
-          <CardContent className="p-5">
-            <h2 className="font-bold mb-3">Lottery Rules</h2>
-            <ul className="space-y-2 text-gray-300">
-              {drawRules.map((r, i) => (
-                <li key={i}>• {r}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+Activation Rules
 
-        {/* PROHIBITED */}
-        <Card className="bg-red-950 border-red-700">
-          <CardContent className="p-5">
-            <h2 className="font-bold mb-3 text-red-400">
-              Prohibited Actions
-            </h2>
-            <ul className="space-y-2 text-gray-300">
-              {prohibited.map((r, i) => (
-                <li key={i}>• {r}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+</h2>
 
-      </div>
-    </div>
-  )
+<ul className="space-y-3">
+
+<li className="flex gap-3">
+
+<CheckCircle2 className="w-5 h-5 text-primary"/>
+
+User must complete all 6 activation tasks
+
+</li>
+
+<li className="flex gap-3">
+
+<CheckCircle2 className="w-5 h-5 text-primary"/>
+
+Activation only required once
+
+</li>
+
+<li className="flex gap-3">
+
+<CheckCircle2 className="w-5 h-5 text-primary"/>
+
+After activation user can access dashboard
+
+</li>
+
+<li className="flex gap-3">
+
+<CheckCircle2 className="w-5 h-5 text-primary"/>
+
+Activation reward is 1 lottery ticket
+
+</li>
+
+</ul>
+
+</CardContent>
+
+</Card>
+
+<Card className="mt-6 bg-destructive/10 border-destructive/30">
+
+<CardContent className="p-8">
+
+<h2 className="text-xl font-bold mb-4 flex gap-2">
+
+<AlertTriangle/>
+
+Prohibited
+
+</h2>
+
+<ul className="space-y-3">
+
+<li>Multiple accounts</li>
+
+<li>Using bots</li>
+
+<li>Fake task completion</li>
+
+<li>System manipulation</li>
+
+</ul>
+
+</CardContent>
+
+</Card>
+
+</div>
+
+</main>
+
+</div>
+
+)
+
 }
