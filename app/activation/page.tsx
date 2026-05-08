@@ -9,40 +9,40 @@ import { createTicket } from '@/lib/ticket-service'
 import { Button } from '@/components/ui/button'
 import { ThreeBackgroundSimple } from '@/components/three-background'
 import { toast } from 'sonner'
-import { Ticket, Loader2 } from 'lucide-react'
+import { Loader2, Ticket } from 'lucide-react'
 
-const ACTIVATION_KEY = 'bitdeen_activation_done_v1'
+const STORAGE_KEY = 'bitdeen_activation_tasks'
 
 const activationTasks = [
   {
     id: 'youtube',
-    title: 'Subscribe YouTube',
-    url: 'https://www.youtube.com/@Bitdeenofficial',
+    title: 'YouTube Subscribe',
+    link: 'https://www.youtube.com/@Bitdeenofficial',
   },
   {
     id: 'facebook',
-    title: 'Follow Facebook',
-    url: 'https://www.facebook.com/bitdeenofficial1',
+    title: 'Facebook Follow',
+    link: 'https://www.facebook.com/bitdeenofficial1',
   },
   {
     id: 'telegram',
-    title: 'Join Telegram Community',
-    url: 'https://t.me/bitdeencommunity',
+    title: 'Join Community',
+    link: 'https://t.me/bitdeencommunity',
   },
   {
     id: 'twitter',
-    title: 'Follow X (Twitter)',
-    url: 'https://x.com/Bitdeenofficial',
+    title: 'Follow Twitter',
+    link: 'https://x.com/Bitdeenofficial',
   },
   {
     id: 'instagram',
     title: 'Follow Instagram',
-    url: 'https://www.instagram.com/bitdeenofficial/',
+    link: 'https://www.instagram.com/bitdeenofficial',
   },
   {
     id: 'tiktok',
     title: 'Follow TikTok',
-    url: 'https://www.tiktok.com/@bitdeenofficial',
+    link: 'https://www.tiktok.com/@bitdeenofficial',
   },
 ]
 
@@ -53,33 +53,36 @@ export default function ActivationPage() {
   const [completed, setCompleted] = useState<string[]>([])
   const [claiming, setClaiming] = useState(false)
 
-  // 🔒 redirect logic
+  // 🔥 Load saved progress (NO RESET AFTER LOGOUT)
   useEffect(() => {
     if (!loading && !user) router.push('/login')
     if (!loading && user && !userProfile?.profileCompleted) router.push('/complete-profile')
 
-    const done = localStorage.getItem(ACTIVATION_KEY)
-    if (done === 'true') router.push('/dashboard')
-  }, [user, userProfile, loading, router])
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) setCompleted(JSON.parse(saved))
+  }, [user, userProfile, loading])
 
-  // 🔗 safe open
   const openTask = (task: any) => {
-    const win = window.open(task.url, '_blank', 'noopener,noreferrer')
+    if (completed.includes(task.id)) return
 
-    if (!win) {
-      // fallback for blocked popup
-      window.location.href = task.url
-    }
+    // try open in app
+    window.open(task.link, '_blank', 'noopener,noreferrer')
+  }
 
-    if (!completed.includes(task.id)) {
-      setCompleted((prev) => [...prev, task.id])
-      toast.success('Task opened. Please complete and return.')
-    }
+  const verifyTask = (id: string) => {
+    setCompleted((prev) => {
+      if (prev.includes(id)) return prev
+
+      const updated = [...prev, id]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
+      toast.success('Task Verified!')
+      return updated
+    })
   }
 
   const allDone = completed.length === activationTasks.length
 
-  // 🎁 CLAIM REWARD (only once)
   const claimReward = async () => {
     if (!allDone || !userProfile) return
 
@@ -96,28 +99,18 @@ export default function ActivationPage() {
 
       await updateUserProfile({
         activationCompleted: true,
-        completedTasks: (userProfile.completedTasks || 0) + activationTasks.length,
       })
 
       await refreshUserProfile()
 
-      localStorage.setItem(ACTIVATION_KEY, 'true')
-
-      toast.success('Activation completed! You got 1 ticket 🎉')
+      toast.success('Activation Completed! 🎉')
       router.push('/dashboard')
-    } catch (e) {
-      toast.error('Failed to claim reward')
+
+    } catch {
+      toast.error('Error claiming reward')
     } finally {
       setClaiming(false)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin w-8 h-8" />
-      </div>
-    )
   }
 
   return (
@@ -126,7 +119,7 @@ export default function ActivationPage() {
 
       <div className="w-full max-w-lg bg-black/70 p-6 rounded-2xl border border-gray-700">
 
-        {/* HEADER */}
+        {/* Header */}
         <div className="text-center mb-6">
           <Image
             src="https://i.imgur.com/VZmr8Dr.jpeg"
@@ -135,45 +128,40 @@ export default function ActivationPage() {
             height={80}
             className="mx-auto rounded-full"
           />
-          <h1 className="text-xl font-bold mt-3">Activate Your Account</h1>
-          <p className="text-sm text-gray-400">
-            Complete all tasks to unlock dashboard
-          </p>
+          <h1 className="text-xl font-bold mt-3">Activate Account</h1>
         </div>
 
-        {/* TASKS */}
+        {/* Tasks */}
         <div className="space-y-3">
-          {activationTasks.map((task) => (
-            <div
-              key={task.id}
-              onClick={() => openTask(task)}
-              className="p-3 bg-gray-800 rounded-lg cursor-pointer flex justify-between hover:bg-gray-700 transition"
-            >
-              <span>{task.title}</span>
-              <span className="text-sm text-yellow-400">Open</span>
+          {activationTasks.map((t) => (
+            <div key={t.id} className="p-3 bg-gray-800 rounded-lg flex justify-between items-center">
+
+              <span>{t.title}</span>
+
+              {completed.includes(t.id) ? (
+                <span className="text-green-400">✔ Done</span>
+              ) : (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => openTask(t)}>
+                    Open
+                  </Button>
+                  <Button size="sm" onClick={() => verifyTask(t.id)}>
+                    Verify
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
 
-        {/* BUTTON */}
-        <div className="mt-6 text-center">
-          <p className="text-sm mb-3 text-gray-400">
-            {completed.length}/{activationTasks.length} completed
-          </p>
-
+        {/* Claim */}
+        <div className="mt-6">
           <Button
             disabled={!allDone || claiming}
             onClick={claimReward}
             className="w-full"
           >
-            {claiming ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <>
-                <Ticket className="w-4 h-4 mr-2" />
-                Claim 1 Ticket
-              </>
-            )}
+            {claiming ? <Loader2 className="animate-spin" /> : 'Claim Ticket'}
           </Button>
         </div>
 
