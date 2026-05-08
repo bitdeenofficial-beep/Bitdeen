@@ -11,7 +11,13 @@ import { ThreeBackgroundSimple } from '@/components/three-background'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
-const STORAGE_KEY = 'bitdeen_activation_tasks'
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+} from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 const tasks = [
   { id: 'youtube', title: 'YouTube Subscribe', link: 'https://youtube.com/@Bitdeenofficial' },
@@ -24,27 +30,44 @@ const tasks = [
 
 export default function ActivationPage() {
   const router = useRouter()
-  const { user, userProfile, updateUserProfile, refreshUserProfile, loading } = useAuth()
+  const { user, userProfile, updateUserProfile, loading } = useAuth()
 
   const [done, setDone] = useState<string[]>([])
   const [taskStart, setTaskStart] = useState<Record<string, number>>({})
   const [claiming, setClaiming] = useState(false)
 
-  // ===============================
-  // LOAD DATA (NO RESET ON RELOAD)
-  // ===============================
+  // =========================
+  // LOAD FIREBASE DATA
+  // =========================
   useEffect(() => {
-    if (!loading && !user) router.push('/login')
+    if (loading) return
 
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) setDone(JSON.parse(saved))
+    if (!user) {
+      router.push('/login')
+      return
+    }
 
+    const loadUserTasks = async () => {
+      try {
+        const ref = doc(db, 'users', user.uid)
+        const snap = await getDoc(ref)
+
+        if (snap.exists()) {
+          const data = snap.data()
+          setDone(data.completedTasks || [])
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    loadUserTasks()
   }, [user, loading])
 
-  // ===============================
-  // OPEN TASK (REAL TRACKING)
-  // ===============================
-  const openTask = (task) => {
+  // =========================
+  // OPEN TASK
+  // =========================
+  const openTask = (task: any) => {
     if (done.includes(task.id)) return
 
     window.open(task.link, '_blank', 'noopener,noreferrer')
@@ -55,10 +78,10 @@ export default function ActivationPage() {
     }))
   }
 
-  // ===============================
-  // VERIFY TASK (ANTI FAKE SYSTEM)
-  // ===============================
-  const verifyTask = (id: string) => {
+  // =========================
+  // VERIFY TASK (FIREBASE SAFE)
+  // =========================
+  const verifyTask = async (id: string) => {
     if (done.includes(id)) return
 
     const start = taskStart[id]
@@ -70,61 +93,64 @@ export default function ActivationPage() {
 
     const diff = Date.now() - start
 
-    // minimum 10 sec required
     if (diff < 10000) {
-      toast.error('Please stay at least 10 seconds')
+      toast.error('Stay at least 10 seconds')
       return
     }
 
-    const updated = [...done, id]
+    try {
+      const updated = [...done, id]
+      setDone(updated)
 
-    setDone(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      await updateDoc(doc(db, 'users', user.uid), {
+        completedTasks: arrayUnion(id),
+      })
 
-    toast.success('Task Verified ✔')
+      toast.success('Task Verified ✔')
+    } catch (err) {
+      toast.error('Verification failed')
+    }
   }
 
-  const allDone = done.length === tasks.length
+  // =========================
+  // CHECK ALL DONE
+  // =========================
+  const allDone = tasks.every((t) => done.includes(t.id))
 
-  // ===============================
+  // =========================
   // CLAIM REWARD
-  // ===============================
+  // =========================
   const claimReward = async () => {
-    if (!allDone) return
-    if (!user || !userProfile?.uid) {
-      toast.error('User not loaded')
-      return
-    }
+    if (!allDone || claiming) return
 
     setClaiming(true)
 
     try {
       await createTicket(
-        userProfile.uid,
-        userProfile.fullName || 'User',
-        userProfile.phone || '',
-        userProfile.address || '',
+        user.uid,
+        userProfile?.fullName || 'User',
+        userProfile?.phone || '',
+        userProfile?.address || '',
         'activation'
       )
 
-      await updateUserProfile({
+      await updateDoc(doc(db, 'users', user.uid), {
         activationCompleted: true,
       })
-
-      await refreshUserProfile()
-
-      localStorage.removeItem(STORAGE_KEY)
 
       toast.success('Activation Completed 🎉')
       router.push('/dashboard')
 
-    } catch (err: any) {
-      toast.error(err?.message || 'Error claiming reward')
+    } catch (err) {
+      toast.error('Claim failed')
     } finally {
       setClaiming(false)
     }
   }
 
+  // =========================
+  // LOADING UI
+  // =========================
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -134,7 +160,7 @@ export default function ActivationPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative islamic-pattern">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
       <ThreeBackgroundSimple />
 
       <motion.div
@@ -144,7 +170,7 @@ export default function ActivationPage() {
       >
         <div className="bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 p-8">
 
-          {/* HEADER (UNCHANGED DESIGN) */}
+          {/* HEADER */}
           <div className="flex flex-col items-center mb-8">
             <Image
               src="https://i.imgur.com/VZmr8Dr.jpeg"
@@ -156,11 +182,11 @@ export default function ActivationPage() {
 
             <h1 className="text-2xl font-bold">Account Activation</h1>
             <p className="text-sm text-muted-foreground text-center mt-2">
-              Complete all tasks below to activate your account and earn your first lottery ticket!
+              Complete all tasks to activate your account and get 1 lottery ticket
             </p>
           </div>
 
-          {/* TASKS */}
+          {/* TASK LIST */}
           <div className="space-y-3 mb-6">
             {tasks.map((t) => (
               <div
@@ -185,7 +211,7 @@ export default function ActivationPage() {
             ))}
           </div>
 
-          {/* CLAIM */}
+          {/* CLAIM BUTTON */}
           <Button
             disabled={!allDone || claiming}
             onClick={claimReward}
