@@ -3,163 +3,309 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import { useAuth } from '@/lib/auth-context'
 import { createTicket } from '@/lib/ticket-service'
 import { Button } from '@/components/ui/button'
+import { ActivationTaskCard } from '@/components/task-card'
+import { ThreeBackgroundSimple } from '@/components/three-background'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import {
+CheckCircle2,
+Ticket,
+Loader2,
+Gift,
+Sparkles
+} from 'lucide-react'
+
+const activationTasks = [
+{
+id: 'youtube',
+platform: 'youtube',
+title: 'Subscribe YouTube',
+link: 'https://youtube.com/@bitdeen'
+},
+{
+id: 'facebook',
+platform: 'facebook',
+title: 'Follow Facebook',
+link: 'https://facebook.com/bitdeen'
+},
+{
+id: 'telegram',
+platform: 'telegram',
+title: 'Join Telegram',
+link: 'https://t.me/bitdeen'
+},
+{
+id: 'twitter',
+platform: 'twitter',
+title: 'Follow Twitter',
+link: 'https://twitter.com/bitdeen'
+},
+{
+id: 'instagram',
+platform: 'instagram',
+title: 'Follow Instagram',
+link: 'https://instagram.com/bitdeen'
+},
+{
+id: 'tiktok',
+platform: 'tiktok',
+title: 'Follow TikTok',
+link: 'https://tiktok.com/@bitdeen'
+}
+]
 
 export default function ActivationPage() {
-  const router = useRouter()
-  const { user, userProfile, updateUserProfile, refreshUserProfile, loading } = useAuth()
 
-  // 🔐 FIXED STATES
-  const [openedTasks, setOpenedTasks] = useState<string[]>([])
-  const [claiming, setClaiming] = useState(false)
+const router = useRouter()
 
-  // 🔐 AUTH GUARD (SAFE)
-  useEffect(() => {
-    if (loading) return
+const {
+user,
+userProfile,
+updateUserProfile,
+refreshUserProfile,
+loading: authLoading
+} = useAuth()
 
-    if (!user) {
-      router.push('/login')
-      return
-    }
+const [completedTasks,setCompletedTasks] = useState<string[]>([])
+const [openedTasks,setOpenedTasks] = useState<string[]>([])
+const [claiming,setClaiming] = useState(false)
 
-    if (user && userProfile && !userProfile.profileCompleted) {
-      router.push('/complete-profile')
-      return
-    }
+useEffect(()=>{
 
-    if (userProfile?.activationCompleted) {
-      router.push('/dashboard')
-      return
-    }
-  }, [user, userProfile, loading, router])
+if(!authLoading && !user){
+router.push('/login')
+}
 
-  // 🔥 FIXED 6 TASKS (STATIC)
-  const tasks = [
-    { id: 'telegram', title: 'Join Telegram', link: 'https://t.me/bitdeencommunity' },
-    { id: 'youtube', title: 'Subscribe YouTube', link: 'https://youtube.com/@bitdeenofficial' },
-    { id: 'instagram', title: 'Follow Instagram', link: 'https://instagram.com/bitdeen.official' },
-    { id: 'facebook', title: 'Follow Facebook', link: 'https://facebook.com/share/1Db5Dk1K2E/' },
-    { id: 'tiktok', title: 'Follow TikTok', link: 'https://www.tiktok.com/@bitdeen.official' },
-    { id: 'twitter', title: 'Follow X', link: 'https://x.com/Bitdeenofficial' },
-  ]
+if(!authLoading && user && !userProfile?.profileCompleted){
+router.push('/complete-profile')
+}
 
-  // 🚀 OPEN ONLY (NO FAKE COMPLETE)
-  const openTask = (task: any) => {
-    window.open(task.link, '_blank', 'noopener,noreferrer')
+if(userProfile?.activationCompleted){
+router.push('/dashboard')
+}
 
-    setOpenedTasks(prev => {
-      if (prev.includes(task.id)) return prev
-      return [...prev, task.id]
-    })
-  }
+},[user,userProfile,authLoading,router])
 
-  // 🧠 ONLY VALID IF ALL OPENED
-  const allOpened = openedTasks.length === tasks.length
+const openTask = (taskId:string,link:string)=>{
 
-  // 🎁 FINAL COMPLETE (SERVER SAFE)
-  const handleContinue = async () => {
-    if (!allOpened || !userProfile) {
-      toast.error('Complete all tasks first')
-      return
-    }
+window.open(link,'_blank')
 
-    setClaiming(true)
+if(!openedTasks.includes(taskId)){
+setOpenedTasks(prev=>[...prev,taskId])
+}
 
-    try {
-      await createTicket(
-        userProfile.uid,
-        userProfile.fullName || userProfile.displayName,
-        userProfile.phone || '',
-        userProfile.address || '',
-        'activation'
-      )
+}
 
-      await updateUserProfile({
-        activationCompleted: true,
-        completedTasks: (userProfile.completedTasks || 0) + tasks.length,
-      })
+const completeTask = (taskId:string)=>{
 
-      await refreshUserProfile()
+if(!openedTasks.includes(taskId)){
+toast.error('Please open the task first')
+return
+}
 
-      toast.success('Activation Completed 🎉')
-      router.push('/dashboard')
+if(!completedTasks.includes(taskId)){
+setCompletedTasks(prev=>[...prev,taskId])
+toast.success('Task verified')
+}
 
-    } catch (err) {
-      toast.error('Something went wrong')
-    } finally {
-      setClaiming(false)
-    }
-  }
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin w-6 h-6" />
-      </div>
-    )
-  }
+const allTasksCompleted =
+completedTasks.length === activationTasks.length
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4">
+const handleClaimReward = async()=>{
 
-      <div className="w-full max-w-md bg-gray-900 p-6 rounded-xl border border-gray-700">
+if(!allTasksCompleted) return
 
-        {/* HEADER (UNCHANGED UI) */}
-        <div className="text-center mb-6">
-          <Image
-            src="https://i.imgur.com/VZmr8Dr.jpeg"
-            alt="logo"
-            width={80}
-            height={80}
-            className="mx-auto rounded-full"
-          />
-          <h1 className="text-xl font-bold mt-3">
-            Activate Your Account
-          </h1>
-          <p className="text-gray-400 text-sm">
-            Complete all tasks to unlock dashboard
-          </p>
-        </div>
+if(!userProfile) return
 
-        {/* TASKS UI (UNCHANGED STYLE) */}
-        <div className="space-y-3">
-          {tasks.map(task => (
-            <div
-              key={task.id}
-              onClick={() => openTask(task)}
-              className="p-3 bg-gray-800 rounded-lg cursor-pointer flex justify-between hover:bg-gray-700"
-            >
-              <span>{task.title}</span>
-              <span className="text-sm">
-                {openedTasks.includes(task.id) ? '✔ Opened' : 'Open'}
-              </span>
-            </div>
-          ))}
-        </div>
+setClaiming(true)
 
-        {/* PROGRESS */}
-        <div className="mt-4 text-center text-sm text-gray-400">
-          {openedTasks.length} / {tasks.length} Opened
-        </div>
+try{
 
-        {/* CONTINUE BUTTON (FIXED) */}
-        <Button
-          disabled={!allOpened || claiming}
-          onClick={handleContinue}
-          className="w-full mt-5"
-        >
-          {claiming ? (
-            <Loader2 className="animate-spin w-4 h-4" />
-          ) : (
-            'Continue'
-          )}
-        </Button>
+await createTicket(
+userProfile.uid,
+userProfile.fullName || userProfile.displayName,
+userProfile.phone || '',
+userProfile.address || '',
+'activation'
+)
 
-      </div>
-    </div>
-  )
+await updateUserProfile({
+activationCompleted:true
+})
+
+await refreshUserProfile()
+
+toast.success('Activation successful')
+
+router.push('/dashboard')
+
+}catch{
+
+toast.error('Activation failed')
+
+}
+
+finally{
+setClaiming(false)
+}
+
+}
+
+if(authLoading){
+return(
+<div className="min-h-screen flex items-center justify-center">
+<Loader2 className="w-8 h-8 animate-spin text-primary"/>
+</div>
+)
+}
+
+return(
+
+<div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden islamic-pattern">
+
+<ThreeBackgroundSimple/>
+
+<motion.div
+initial={{opacity:0,y:20}}
+animate={{opacity:1,y:0}}
+className="w-full max-w-lg"
+>
+
+<div className="relative bg-card/80 backdrop-blur-xl rounded-3xl border border-border/50 p-8 card-glow">
+
+<div className="flex flex-col items-center mb-8">
+
+<div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-primary/50 mb-4">
+
+<Image
+src="https://i.imgur.com/VZmr8Dr.jpeg"
+alt="BitDeen Logo"
+fill
+className="object-cover"
+/>
+
+</div>
+
+<h1 className="text-2xl font-bold text-gold-gradient">
+Account Activation
+</h1>
+
+<p className="text-muted-foreground text-center mt-2 text-sm">
+
+Complete all tasks to activate account
+
+</p>
+
+</div>
+
+<div className="mb-6">
+
+<div className="flex justify-between text-sm mb-2">
+
+<span>Progress</span>
+
+<span className="text-primary font-medium">
+
+{completedTasks.length}/{activationTasks.length}
+
+</span>
+
+</div>
+
+<div className="h-2 bg-muted rounded-full overflow-hidden">
+
+<motion.div
+
+animate={{
+width:`${(completedTasks.length/activationTasks.length)*100}%`
+}}
+
+className="h-full bg-primary"
+
+/>
+
+</div>
+
+</div>
+
+<div className="space-y-3 mb-6">
+
+{activationTasks.map((task,index)=>(
+
+<ActivationTaskCard
+
+key={task.id}
+
+platform={task.platform}
+
+title={task.title}
+
+link={task.link}
+
+opened={openedTasks.includes(task.id)}
+
+isCompleted={completedTasks.includes(task.id)}
+
+onOpen={()=>openTask(task.id,task.link)}
+
+onComplete={()=>completeTask(task.id)}
+
+index={index}
+
+/>
+
+))}
+
+</div>
+
+{allTasksCompleted ?(
+
+<Button
+
+onClick={handleClaimReward}
+
+disabled={claiming}
+
+className="w-full h-14 text-base font-semibold bg-primary text-white rounded-xl"
+
+>
+
+{claiming ?
+
+<Loader2 className="animate-spin"/>
+
+:
+
+<>
+<Sparkles className="w-5 h-5 mr-2"/>
+Claim Ticket
+</>
+
+}
+
+</Button>
+
+):
+
+<div className="text-center p-4 rounded-xl bg-muted/30">
+
+Complete all tasks to activate
+
+</div>
+
+}
+
+</div>
+
+</motion.div>
+
+</div>
+
+)
+
 }
