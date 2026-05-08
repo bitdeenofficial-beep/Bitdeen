@@ -2,22 +2,42 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/lib/auth-context'
+import { createTicket } from '@/lib/ticket-service'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
 
 export default function ActivationPage() {
   const router = useRouter()
-  const { user, userProfile, loading } = useAuth()
+  const { user, userProfile, updateUserProfile, refreshUserProfile, loading } = useAuth()
 
-  const [done, setDone] = useState<string[]>([])
+  // 🔐 FIXED STATES
+  const [openedTasks, setOpenedTasks] = useState<string[]>([])
+  const [claiming, setClaiming] = useState(false)
 
-  // 🔐 AUTH GUARD
+  // 🔐 AUTH GUARD (SAFE)
   useEffect(() => {
-    if (!loading && !user) router.push('/login')
-    if (!loading && user && !userProfile?.profileCompleted) router.push('/complete-profile')
-    if (userProfile?.activationCompleted) router.push('/dashboard')
+    if (loading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    if (user && userProfile && !userProfile.profileCompleted) {
+      router.push('/complete-profile')
+      return
+    }
+
+    if (userProfile?.activationCompleted) {
+      router.push('/dashboard')
+      return
+    }
   }, [user, userProfile, loading, router])
 
-  // 🔥 FIXED TASKS (NEVER CHANGE)
+  // 🔥 FIXED 6 TASKS (STATIC)
   const tasks = [
     { id: 'telegram', title: 'Join Telegram', link: 'https://t.me/bitdeencommunity' },
     { id: 'youtube', title: 'Subscribe YouTube', link: 'https://youtube.com/@bitdeenofficial' },
@@ -27,52 +47,117 @@ export default function ActivationPage() {
     { id: 'twitter', title: 'Follow X', link: 'https://x.com/Bitdeenofficial' },
   ]
 
-  // 🚀 OPEN TASK (SAFE)
+  // 🚀 OPEN ONLY (NO FAKE COMPLETE)
   const openTask = (task: any) => {
-    if (!task?.link) return
-
     window.open(task.link, '_blank', 'noopener,noreferrer')
 
-    setDone(prev => {
+    setOpenedTasks(prev => {
       if (prev.includes(task.id)) return prev
       return [...prev, task.id]
     })
   }
 
-  const allDone = done.length === tasks.length
+  // 🧠 ONLY VALID IF ALL OPENED
+  const allOpened = openedTasks.length === tasks.length
+
+  // 🎁 FINAL COMPLETE (SERVER SAFE)
+  const handleContinue = async () => {
+    if (!allOpened || !userProfile) {
+      toast.error('Complete all tasks first')
+      return
+    }
+
+    setClaiming(true)
+
+    try {
+      await createTicket(
+        userProfile.uid,
+        userProfile.fullName || userProfile.displayName,
+        userProfile.phone || '',
+        userProfile.address || '',
+        'activation'
+      )
+
+      await updateUserProfile({
+        activationCompleted: true,
+        completedTasks: (userProfile.completedTasks || 0) + tasks.length,
+      })
+
+      await refreshUserProfile()
+
+      toast.success('Activation Completed 🎉')
+      router.push('/dashboard')
+
+    } catch (err) {
+      toast.error('Something went wrong')
+    } finally {
+      setClaiming(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin w-6 h-6" />
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white p-6">
+    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4">
 
-      <div className="w-full max-w-md bg-gray-900 p-6 rounded-xl">
+      <div className="w-full max-w-md bg-gray-900 p-6 rounded-xl border border-gray-700">
 
-        <h1 className="text-xl font-bold mb-4 text-center">
-          Activate Your Account
-        </h1>
+        {/* HEADER (UNCHANGED UI) */}
+        <div className="text-center mb-6">
+          <Image
+            src="https://i.imgur.com/VZmr8Dr.jpeg"
+            alt="logo"
+            width={80}
+            height={80}
+            className="mx-auto rounded-full"
+          />
+          <h1 className="text-xl font-bold mt-3">
+            Activate Your Account
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Complete all tasks to unlock dashboard
+          </p>
+        </div>
 
-        {/* TASK LIST */}
+        {/* TASKS UI (UNCHANGED STYLE) */}
         <div className="space-y-3">
           {tasks.map(task => (
             <div
               key={task.id}
               onClick={() => openTask(task)}
-              className="p-3 bg-gray-800 rounded cursor-pointer flex justify-between hover:bg-gray-700"
+              className="p-3 bg-gray-800 rounded-lg cursor-pointer flex justify-between hover:bg-gray-700"
             >
               <span>{task.title}</span>
-              <span>{done.includes(task.id) ? '✔ Done' : 'Open'}</span>
+              <span className="text-sm">
+                {openedTasks.includes(task.id) ? '✔ Opened' : 'Open'}
+              </span>
             </div>
           ))}
         </div>
 
-        {/* BUTTON */}
-        <button
-          disabled={!allDone}
-          className={`mt-5 w-full p-3 rounded ${
-            allDone ? 'bg-green-600' : 'bg-gray-600'
-          }`}
+        {/* PROGRESS */}
+        <div className="mt-4 text-center text-sm text-gray-400">
+          {openedTasks.length} / {tasks.length} Opened
+        </div>
+
+        {/* CONTINUE BUTTON (FIXED) */}
+        <Button
+          disabled={!allOpened || claiming}
+          onClick={handleContinue}
+          className="w-full mt-5"
         >
-          Continue to Dashboard
-        </button>
+          {claiming ? (
+            <Loader2 className="animate-spin w-4 h-4" />
+          ) : (
+            'Continue'
+          )}
+        </Button>
 
       </div>
     </div>
