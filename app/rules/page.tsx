@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/navbar'
-import { ThreeBackgroundSimple } from '@/components/three-background'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   BookOpen,
@@ -17,217 +16,157 @@ import {
 } from 'lucide-react'
 
 export default function RulesPage() {
+
   const generalRules = [
-    'Users must be 18 years or older to participate',
-    'One account per person - multiple accounts are prohibited',
-    'All information provided must be accurate and truthful',
-    'Users must complete profile setup including valid contact information',
-    'Tickets are non-transferable and cannot be sold or exchanged',
+    'Users must provide accurate information during registration',
+    'One account per user is strictly allowed',
+    'Users must complete profile verification before activation',
+    'Tickets are non-transferable and system controlled',
+    'Any misuse will result in permanent ban',
+  ]
+
+  const activationRules = [
+    {
+      icon: CheckCircle2,
+      title: 'Activation System',
+      description: 'Users must complete 6 fixed social tasks (Telegram, YouTube, Instagram, Facebook, TikTok, X) to unlock dashboard and earn 1 ticket.',
+    },
+    {
+      icon: Shield,
+      title: 'Fixed System',
+      description: 'Activation tasks are permanent and cannot be changed or modified for fairness.',
+    },
   ]
 
   const earningRules = [
     {
-      icon: CheckCircle2,
-      title: 'Account Activation',
-      description: 'Complete all 5 activation tasks (YouTube, Facebook, Telegram, Twitter, Instagram) to earn 1 ticket',
+      icon: ListTodo,
+      title: 'Admin Tasks',
+      description: 'Earning tasks are provided dynamically by admin through Firebase system.',
     },
     {
       icon: Calendar,
       title: 'Daily Check-in',
-      description: 'Check in once per day to earn 1 ticket. Check-in resets at midnight UTC.',
+      description: 'Users can earn 1 ticket per day by checking in once daily.',
     },
     {
       icon: Users,
-      title: 'Referral Program',
-      description: 'Earn 10 tickets for each friend who signs up using your referral code and completes activation.',
-    },
-    {
-      icon: ListTodo,
-      title: 'Task Completion',
-      description: 'Complete social media tasks posted by admin. Ticket rewards vary per task.',
+      title: 'Referral System',
+      description: 'Earn 10 tickets per verified referral after activation.',
     },
     {
       icon: Target,
-      title: 'Mission Milestones',
-      description: 'Complete 10 tasks = 1 ticket, 100 tasks = 10 tickets, 1000 tasks = 100 tickets.',
+      title: 'Mission Rewards',
+      description: '10 tasks = 1 ticket, 100 tasks = 10 tickets, 1000 tasks = 100 tickets.',
     },
   ]
 
   const drawRules = [
-    'Lottery draws are conducted at scheduled times announced in advance',
-    'All active tickets are eligible for the draw',
-    'Winners are selected randomly using a fair randomization system',
-    'Draws are broadcast live on YouTube and Facebook for transparency',
-    'Winners will be announced during the live draw and on the Winners page',
-    'Winners will be contacted via their registered email and phone number',
-    'Prizes must be claimed within 30 days of the draw announcement',
-    'BitDeen reserves the right to verify winner eligibility before prize distribution',
+    'All draws are conducted transparently at scheduled times',
+    'Only valid tickets are eligible for lottery draw',
+    'Winners are selected using random system',
+    'Live draws are streamed on YouTube and Facebook',
+    'Winners are announced publicly after draw',
+    'Prizes must be claimed within 30 days',
   ]
 
-  const prohibitedActions = [
+  const prohibited = [
     'Creating multiple accounts',
-    'Using bots or automated systems to complete tasks',
-    'Providing false information',
-    'Attempting to manipulate the system',
-    'Sharing account credentials',
-    'Engaging in fraudulent referral activities',
+    'Using bots or automation',
+    'Fake referral activity',
+    'System manipulation attempts',
+    'Sharing accounts with others',
   ]
 
   return (
-    <div className="min-h-screen islamic-pattern">
-      <ThreeBackgroundSimple />
+    <div className="min-h-screen bg-black text-white">
+
       <Navbar />
 
-      <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-6">
-              <BookOpen className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-              Rules & <span className="text-gold-gradient">Guidelines</span>
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Please read and understand our rules before participating
-            </p>
-          </motion.div>
+      <div className="max-w-4xl mx-auto px-4 py-20">
 
-          {/* General Rules */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8"
-          >
-            <Card className="bg-card/80 backdrop-blur-xl border-border/50">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-bold">General Rules</h2>
-                </div>
-                <ul className="space-y-3">
-                  {generalRules.map((rule, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{rule}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* HEADER */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <BookOpen className="mx-auto w-10 h-10 text-yellow-400 mb-3" />
+          <h1 className="text-3xl font-bold">
+            Rules & Guidelines
+          </h1>
+          <p className="text-gray-400 mt-2">
+            Please read carefully before using the platform
+          </p>
+        </motion.div>
 
-          {/* Earning Rules */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
-            <Card className="bg-card/80 backdrop-blur-xl border-border/50">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Ticket className="w-5 h-5 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-bold">How to Earn Tickets</h2>
-                </div>
-                <div className="space-y-4">
-                  {earningRules.map((rule, index) => (
-                    <div key={index} className="flex items-start gap-4 p-4 rounded-xl bg-muted/30">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <rule.icon className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold mb-1">{rule.title}</h3>
-                        <p className="text-sm text-muted-foreground">{rule.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* GENERAL RULES */}
+        <Card className="mb-6 bg-gray-900 border-gray-700">
+          <CardContent className="p-5">
+            <h2 className="font-bold mb-3">General Rules</h2>
+            <ul className="space-y-2 text-gray-300">
+              {generalRules.map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
-          {/* Draw Rules */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-8"
-          >
-            <Card className="bg-card/80 backdrop-blur-xl border-border/50">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-bold">Lottery Draw Rules</h2>
-                </div>
-                <ul className="space-y-3">
-                  {drawRules.map((rule, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-sm font-bold flex items-center justify-center shrink-0">
-                        {index + 1}
-                      </span>
-                      <span className="text-muted-foreground">{rule}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* ACTIVATION RULES */}
+        <Card className="mb-6 bg-gray-900 border-gray-700">
+          <CardContent className="p-5">
+            <h2 className="font-bold mb-3">Activation System</h2>
 
-          {/* Prohibited Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card className="bg-destructive/10 border-destructive/30">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-destructive" />
-                  </div>
-                  <h2 className="text-xl font-bold">Prohibited Actions</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  The following actions will result in account suspension or permanent ban:
-                </p>
-                <ul className="space-y-3">
-                  {prohibitedActions.map((action, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">{action}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
+            {activationRules.map((r, i) => (
+              <div key={i} className="mb-3">
+                <h3 className="font-semibold text-yellow-400">{r.title}</h3>
+                <p className="text-gray-400 text-sm">{r.description}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-          {/* Disclaimer */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-center text-sm text-muted-foreground"
-          >
-            <p>
-              By using BitDeen, you agree to abide by these rules. BitDeen reserves the right 
-              to modify these rules at any time. Users will be notified of any significant changes.
-            </p>
-          </motion.div>
-        </div>
-      </main>
+        {/* EARNING RULES */}
+        <Card className="mb-6 bg-gray-900 border-gray-700">
+          <CardContent className="p-5">
+            <h2 className="font-bold mb-3">Earning System</h2>
+
+            {earningRules.map((r, i) => (
+              <div key={i} className="mb-3">
+                <h3 className="font-semibold text-green-400">{r.title}</h3>
+                <p className="text-gray-400 text-sm">{r.description}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* DRAW RULES */}
+        <Card className="mb-6 bg-gray-900 border-gray-700">
+          <CardContent className="p-5">
+            <h2 className="font-bold mb-3">Lottery Rules</h2>
+            <ul className="space-y-2 text-gray-300">
+              {drawRules.map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* PROHIBITED */}
+        <Card className="bg-red-950 border-red-700">
+          <CardContent className="p-5">
+            <h2 className="font-bold mb-3 text-red-400">
+              Prohibited Actions
+            </h2>
+            <ul className="space-y-2 text-gray-300">
+              {prohibited.map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+      </div>
     </div>
   )
 }
